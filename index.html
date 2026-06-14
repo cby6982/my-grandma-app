@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>大字版生活萬用寶盒</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontSize: {
+            'xxl': '1.75rem',
+            '3xl': '2.5rem',
+            '4xl': '3rem',
+            '5xl': '3.5rem',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    input, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    body {
+      overscroll-behavior-y: contain;
+      touch-action: manipulation;
+    }
+    .tab-btn.active {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body class="bg-blue-50 dark:bg-gray-900 min-h-screen flex flex-col pb-32 transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-10 bg-blue-600 dark:bg-gray-800 shadow-lg">
+    <div class="py-3 px-4 flex items-center justify-between">
+      <h1 class="text-4xl font-bold text-white tracking-wider flex-1 text-center">📱 生活萬用寶盒</h1>
+      <div class="flex gap-2" id="font-size-buttons">
+        <button onclick="setFont('16px')" id="font-sm" class="w-11 h-11 rounded-full bg-white/20 text-white font-bold text-lg active:scale-95 transition-all">中</button>
+        <button onclick="setFont('22px')" id="font-md" class="w-11 h-11 rounded-full bg-white/20 text-white font-bold text-lg active:scale-95 transition-all">大</button>
+        <button onclick="setFont('30px')" id="font-lg" class="w-11 h-11 rounded-full bg-white/20 text-white font-bold text-lg active:scale-95 transition-all">巨</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 px-4 pt-4">
+
+    <!-- 生活備忘頁面 -->
+    <div id="page-memo" class="space-y-4">
+      <h2 class="text-3xl font-bold text-gray-800 dark:text-white">📝 生活備忘與重要密碼</h2>
+
+      <!-- 通知測試按鈕 -->
+      <button onclick="testNotification()"
+        class="w-full bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 active:scale-95 text-white text-3xl font-bold py-5 rounded-xl shadow-lg transition-all">
+        🔔 開啟手機提醒
+      </button>
+
+      <!-- 新增備忘 -->
+      <div class="flex gap-3">
+        <input id="memo-input" type="text" placeholder="例如：提款卡密碼、鄰居電話..."
+          class="flex-1 text-xxl px-4 py-4 rounded-xl border-2 border-blue-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 focus:outline-none shadow-md active:scale-95 transition-transform"
+          autocomplete="off">
+        <button onclick="addMemo()"
+          class="bg-green-500 hover:bg-green-600 active:bg-green-700 active:scale-95 text-white text-4xl font-bold px-5 py-4 rounded-xl shadow-lg transition-all">
+          ➕
+        </button>
+      </div>
+
+      <!-- 拍照備忘 -->
+      <input id="camera-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoMemo(event)">
+      <button onclick="document.getElementById('camera-input').click()"
+        class="w-full bg-purple-500 hover:bg-purple-600 active:bg-purple-700 active:scale-95 text-white text-3xl font-bold py-5 rounded-xl shadow-lg transition-all">
+        📷 拍張照
+      </button>
+
+      <!-- 備忘清單 -->
+      <div id="memo-list" class="space-y-4"></div>
+    </div>
+
+    <!-- 買菜計算頁面 -->
+    <div id="page-shopping" class="hidden space-y-4">
+      <h2 class="text-3xl font-bold text-gray-800 dark:text-white">🛒 菜市場買菜計算機</h2>
+
+      <!-- 新增項目按鈕 -->
+      <button onclick="addShoppingItem(); requestShakePermission();"
+        class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 active:scale-95 text-white text-3xl font-bold py-5 rounded-xl shadow-lg transition-all">
+        ➕ 記一筆
+      </button>
+
+      <!-- 搖一搖提示 -->
+      <p class="text-center text-xl text-gray-400 dark:text-gray-500 pb-2">📟 搖一搖手機即可清空清單</p>
+
+      <!-- 購物清單 -->
+      <div id="shopping-list" class="space-y-4"></div>
+
+      <!-- 總金額 -->
+      <div class="sticky bottom-6 bg-red-600 dark:bg-red-700 rounded-2xl shadow-2xl p-5 text-center mt-6">
+        <p class="text-4xl font-bold text-white mb-3">💰 目前總共：<span id="total-amount">0</span> 元</p>
+        <button onclick="speakTotal()"
+          class="bg-white text-red-600 text-2xl font-bold px-6 py-3 rounded-xl shadow-lg active:scale-95 transition-all">
+          🔊 唸出來
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 底部導覽列 -->
+  <nav class="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 border-t-4 border-blue-400 dark:border-gray-600 shadow-2xl">
+    <div class="flex">
+      <button id="tab-memo" onclick="switchTab('memo')"
+        class="tab-btn active flex-1 py-5 text-center text-2xl font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-gray-700 active:scale-95 transition-all">
+        📝 生活備忘
+      </button>
+      <button id="tab-shopping" onclick="switchTab('shopping')"
+        class="tab-btn flex-1 py-5 text-center text-2xl font-bold text-gray-500 dark:text-gray-400 active:scale-95 transition-all">
+        🛒 買菜計算
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    // ============ 深色模式偵測 ============
+    function initDarkMode() {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      if (mq.matches) document.documentElement.classList.add('dark');
+      mq.addEventListener('change', (e) => {
+        if (e.matches) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      });
+    }
+    initDarkMode();
+
+    // ============ 頁籤切換 ============
+    function switchTab(tab) {
+      const memoPage = document.getElementById('page-memo');
+      const shoppingPage = document.getElementById('page-shopping');
+      const tabMemo = document.getElementById('tab-memo');
+      const tabShopping = document.getElementById('tab-shopping');
+
+      if (tab === 'memo') {
+        memoPage.classList.remove('hidden');
+        shoppingPage.classList.add('hidden');
+        tabMemo.classList.add('active', 'bg-blue-100', 'dark:bg-gray-700', 'text-blue-600', 'dark:text-blue-400');
+        tabMemo.classList.remove('text-gray-500', 'dark:text-gray-400');
+        tabShopping.classList.remove('active', 'bg-blue-100', 'dark:bg-gray-700', 'text-blue-600', 'dark:text-blue-400');
+        tabShopping.classList.add('text-gray-500', 'dark:text-gray-400');
+      } else {
+        shoppingPage.classList.remove('hidden');
+        memoPage.classList.add('hidden');
+        tabShopping.classList.add('active', 'bg-blue-100', 'dark:bg-gray-700', 'text-blue-600', 'dark:text-blue-400');
+        tabShopping.classList.remove('text-gray-500', 'dark:text-gray-400');
+        tabMemo.classList.remove('active', 'bg-blue-100', 'dark:bg-gray-700', 'text-blue-600', 'dark:text-blue-400');
+        tabMemo.classList.add('text-gray-500', 'dark:text-gray-400');
+      }
+    }
+
+    // ============ 生活備忘功能 ============
+    function getMemos() {
+      return JSON.parse(localStorage.getItem('senior_memos') || '[]');
+    }
+
+    function saveMemos(memos) {
+      localStorage.setItem('senior_memos', JSON.stringify(memos));
+    }
+
+    function addMemo() {
+      const input = document.getElementById('memo-input');
+      const text = input.value.trim();
+      if (!text) return;
+      const memos = getMemos();
+      memos.unshift({ id: Date.now(), text: text, type: 'text' });
+      saveMemos(memos);
+      input.value = '';
+      renderMemos();
+    }
+
+    function handlePhotoMemo(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        alert('照片太大，無法儲存（限 5MB 以內）');
+        event.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const memos = getMemos();
+        memos.unshift({ id: Date.now(), image: e.target.result, type: 'image' });
+        try {
+          saveMemos(memos);
+          renderMemos();
+        } catch (err) {
+          alert('儲存空間不足，無法儲存照片');
+        }
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+
+    function deleteMemo(id) {
+      const memos = getMemos().filter(m => m.id !== id);
+      saveMemos(memos);
+      renderMemos();
+    }
+
+    function renderMemos() {
+      const list = document.getElementById('memo-list');
+      const memos = getMemos();
+      if (memos.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-10">
+            <p class="text-xxl text-gray-400 dark:text-gray-500">還沒有備忘，按 ➕ 來新增一筆吧！</p>
+          </div>`;
+        return;
+      }
+      list.innerHTML = memos.map(memo => {
+        if (memo.type === 'image') {
+          return `
+        <div class="bg-white dark:bg-gray-700 rounded-xl shadow-lg p-5">
+          <img src="${memo.image}" class="w-full rounded-lg mb-3" style="max-height:300px;object-fit:cover;">
+          <button onclick="deleteMemo(${memo.id})"
+            class="w-full bg-red-500 hover:bg-red-600 active:bg-red-700 active:scale-95 text-white text-3xl font-bold py-3 rounded-xl shadow-md transition-all">
+            刪除
+          </button>
+        </div>`;
+        }
+        return `
+        <div class="bg-white dark:bg-gray-700 rounded-xl shadow-lg p-5 flex items-center justify-between">
+          <p class="text-xxl font-bold text-gray-800 dark:text-white flex-1 break-all pr-4">${escapeHtml(memo.text)}</p>
+          <button onclick="deleteMemo(${memo.id})"
+            class="bg-red-500 hover:bg-red-600 active:bg-red-700 active:scale-95 text-white text-3xl font-bold px-4 py-3 rounded-xl shadow-md transition-all flex-shrink-0">
+            刪除
+          </button>
+        </div>`;
+      }).join('');
+    }
+
+    // Enter 鍵支援
+    document.getElementById('memo-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addMemo();
+    });
+
+    // ============ 買菜計算功能 ============
+    function getShoppingItems() {
+      return JSON.parse(localStorage.getItem('senior_shopping') || '[]');
+    }
+
+    function saveShoppingItems(items) {
+      localStorage.setItem('senior_shopping', JSON.stringify(items));
+    }
+
+    function addShoppingItem() {
+      const items = getShoppingItems();
+      items.push({ id: Date.now(), name: '', amount: '' });
+      saveShoppingItems(items);
+      renderShoppingList();
+      // 自動聚焦到新項目的品名輸入框
+      setTimeout(() => {
+        const inputs = document.querySelectorAll('.item-name');
+        if (inputs.length) inputs[inputs.length - 1].focus();
+      }, 100);
+    }
+
+    function updateShoppingItem(id, field, value) {
+      const items = getShoppingItems();
+      const item = items.find(i => i.id === id);
+      if (item) {
+        if (field === 'amount') {
+          // 只允許數字和小數點
+          value = value.replace(/[^\d.]/g, '');
+          // 防止多個小數點
+          const parts = value.split('.');
+          if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+        }
+        item[field] = value;
+      }
+      saveShoppingItems(items);
+      updateTotal();
+    }
+
+    function deleteShoppingItem(id) {
+      const items = getShoppingItems().filter(i => i.id !== id);
+      saveShoppingItems(items);
+      renderShoppingList();
+      updateTotal();
+    }
+
+    function updateTotal() {
+      const items = getShoppingItems();
+      let total = 0;
+      items.forEach(item => {
+        const num = parseFloat(item.amount);
+        if (!isNaN(num)) total += num;
+      });
+      document.getElementById('total-amount').textContent = total % 1 === 0 ? total.toString() : total.toFixed(2);
+    }
+
+    function renderShoppingList() {
+      const list = document.getElementById('shopping-list');
+      const items = getShoppingItems();
+      if (items.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-10">
+            <p class="text-xxl text-gray-400 dark:text-gray-500">還沒有項目，按「➕ 記一筆」開始吧！</p>
+          </div>`;
+        return;
+      }
+      list.innerHTML = items.map((item, index) => `
+        <div class="bg-white dark:bg-gray-700 rounded-xl shadow-lg p-4 flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-xxl font-bold text-gray-600 dark:text-gray-300 w-8 text-center">${index + 1}.</span>
+            <input class="item-name flex-1 text-xxl px-3 py-3 rounded-lg border-2 border-blue-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white focus:border-blue-500 focus:outline-none active:scale-95 transition-transform"
+              type="text" placeholder="品名（如：豬肉）" value="${escapeHtml(item.name)}"
+              oninput="updateShoppingItem(${item.id}, 'name', this.value)">
+            <span class="text-xxl text-gray-500 dark:text-gray-400 font-bold">💰</span>
+            <input class="item-amount w-28 text-xxl px-3 py-3 rounded-lg border-2 border-green-200 dark:border-gray-600 dark:bg-gray-600 dark:text-white focus:border-green-500 focus:outline-none text-right active:scale-95 transition-transform"
+              type="text" inputmode="numeric" placeholder="金額" value="${item.amount}"
+              oninput="updateShoppingItem(${item.id}, 'amount', this.value)">
+            <button onclick="deleteShoppingItem(${item.id})"
+              class="bg-red-500 hover:bg-red-600 active:bg-red-700 active:scale-95 text-white text-2xl font-bold px-3 py-3 rounded-lg shadow-md transition-all flex-shrink-0">
+              ✕
+            </button>
+          </div>
+        </div>
+      `).join('');
+      updateTotal();
+    }
+
+    // ============ 字體大小切換 ============
+    function setFont(size) {
+      document.documentElement.style.fontSize = size;
+      localStorage.setItem('senior_fontsize', size);
+      document.querySelectorAll('#font-size-buttons button').forEach(btn => btn.classList.remove('bg-blue-500'));
+      const id = size === '16px' ? 'font-sm' : size === '22px' ? 'font-md' : 'font-lg';
+      document.getElementById(id).classList.add('bg-blue-500');
+    }
+
+    function initFontSize() {
+      const saved = localStorage.getItem('senior_fontsize');
+      if (saved) setFont(saved);
+      else setFont('16px');
+    }
+
+    // ============ 語音報帳 ============
+    function speakTotal() {
+      const total = document.getElementById('total-amount').textContent;
+      const text = '目前總共' + total + '元';
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-TW';
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // ============ 通知測試 ============
+    function testNotification() {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          new Notification('萬用寶盒提醒', { body: '萬用寶盒已啟動，長輩出門別忘了帶鑰匙喔！' });
+        }
+      });
+    }
+
+    // ============ 搖一搖清空購物車 ============
+    let shakePermissionGranted = false;
+    let lastShakeTime = 0;
+
+    function requestShakePermission() {
+      if (shakePermissionGranted) return;
+      if (typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission) {
+        DeviceMotionEvent.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            shakePermissionGranted = true;
+            initShake();
+          }
+        }).catch(() => {});
+      } else {
+        shakePermissionGranted = true;
+        initShake();
+      }
+    }
+
+    function initShake() {
+      if (shakePermissionGranted && !window.__shakeInit) {
+        window.__shakeInit = true;
+        window.addEventListener('devicemotion', handleShake);
+      }
+    }
+
+    function handleShake(e) {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      const now = Date.now();
+      if (now - lastShakeTime < 1500) return;
+      const x = acc.x || 0, y = acc.y || 0, z = acc.z || 0;
+      const total = Math.abs(x) + Math.abs(y) + Math.abs(z);
+      if (total > 25) {
+        lastShakeTime = now;
+        if (navigator.vibrate) navigator.vibrate(200);
+        saveShoppingItems([]);
+        renderShoppingList();
+        updateTotal();
+      }
+    }
+
+    // ============ 公用函式 ============
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ============ 初始化 ============
+    initFontSize();
+    initDarkMode();
+    renderMemos();
+    renderShoppingList();
+  </script>
+</body>
+</html>
