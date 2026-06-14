@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.grandmaapp",
+  "appName": "大字萬用寶盒",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
